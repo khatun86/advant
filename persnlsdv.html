@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boutique OS: Live Savings 🎀</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --pink: #ffb7ce; --hot-pink: #ff4d94; --soft-bg: #fff5f8;
+            --terminal-grey: #f0f0f0; --money-green: #2ecc71; --money-red: #e74c3c;
+        }
+
+        body {
+            background-color: var(--soft-bg); margin: 0; font-family: 'Arial Rounded MT Bold', sans-serif;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+
+        /* --- LIVE CALCULATION SUMMARY --- */
+        #summary-container {
+            width: 90%; max-width: 400px; background: white; padding: 15px;
+            border-radius: 20px; border: 3px solid var(--pink); margin-top: 20px;
+            box-shadow: 0 4px 0 var(--pink); text-align: center;
+        }
+        
+        .goal-setting { display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 10px; }
+        .goal-input { width: 80px; border: 1px solid var(--pink); border-radius: 5px; text-align: center; color: var(--hot-pink); font-family: inherit; font-weight: bold; }
+
+        .progress-bg { background: #eee; height: 12px; border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        #progress-fill { background: var(--hot-pink); height: 100%; width: 0%; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* --- VISION BOARD --- */
+        #vision-board {
+            width: 90%; max-width: 400px; background: white; padding: 15px;
+            border-radius: 20px; border: 3px solid var(--pink); margin-top: 15px;
+            box-shadow: 0 4px 0 var(--pink); box-sizing: border-box;
+        }
+        .vision-title { color: var(--hot-pink); font-size: 14px; margin-bottom: 10px; display: block; text-align: center; }
+        #photo-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; min-height: 50px; }
+        .vision-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 10px; border: 2px solid var(--pink); }
+        .upload-controls { display: flex; gap: 5px; margin-bottom: 8px; }
+        .upload-btn { background: var(--pink); color: white; border: none; padding: 8px; border-radius: 10px; font-size: 11px; cursor: pointer; font-weight: bold; }
+        #vision-input { width: 100%; border: 1px dashed var(--pink); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 12px; outline: none; resize: none; box-sizing: border-box; background: #fffafb; }
+
+        /* --- CALENDAR GRID --- */
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 15px; width: 90vw; max-width: 400px; margin-top: 20px; padding-bottom: 40px;
+        }
+        .door {
+            aspect-ratio: 1/1; background: white; border: 4px solid var(--pink);
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: var(--pink); cursor: pointer; transition: 0.3s; 
+            box-shadow: 0 5px 0 var(--pink); position: relative;
+        }
+        #bunny { position: absolute; font-size: 30px; z-index: 100; pointer-events: none; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        /* --- HUB PAGE --- */
+        #hub-page { display: none; width: 100%; background: white; min-height: 100vh; }
+        .card { background: white; border: 3px solid var(--pink); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 0 var(--pink); }
+        input, textarea { width: 100%; border: 1px solid #eee; border-radius: 10px; padding: 10px; box-sizing: border-box; }
+        .back-btn { background: var(--hot-pink); color: white; border: none; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; }
+
+        /* PDF HIDDEN */
+        #pdf-report { display: none; padding: 40px; color: #333; }
+        .export-btn { background: white; border: 1px solid var(--pink); color: var(--hot-pink); padding: 5px 15px; border-radius: 15px; font-size: 10px; cursor: pointer; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="bunny">🐰</div>
+
+    <div id="front-page">
+        <h1 style="color:var(--hot-pink); margin-top:30px;">personal advant 🎀</h1>
+        
+        <div id="summary-container">
+            <div class="goal-setting">
+                <span style="font-size:11px;">Target Savings Goal: $</span>
+                <input type="number" id="savings-goal" class="goal-input" value="1000" oninput="updateCalculatedSummary()">
+            </div>
+            <div style="font-size:14px; margin-bottom:5px;">
+                <span style="color:var(--hot-pink);">Total Calculated Savings:</span>
+                <br>
+                <b id="total-saved-label" style="font-size:22px; color:var(--money-green);">$0.00</b>
+            </div>
+            <div class="progress-bg"><div id="progress-fill"></div></div>
+            <span id="percent-label" style="font-size:10px; opacity:0.7;">0% of goal reached</span>
+            <br>
+            <button class="export-btn" onclick="generatePDF()">📥 Export Report (PDF)</button>
+        </div>
+
+        <div id="vision-board">
+            <span class="vision-title">✨ 2026 Vision Board ✨</span>
+            <div id="photo-gallery"></div>
+            <input type="file" id="photo-upload" accept="image/*" style="display:none">
+            <div class="upload-controls">
+                <button class="upload-btn" style="flex:3" onclick="document.getElementById('photo-upload').click()">+ Add Photo</button>
+                <button class="upload-btn" style="flex:1; background:#ffccd5; color:#ff4d94;" onclick="deletePhotos()">🗑️</button>
+            </div>
+            <textarea id="vision-input" rows="2" placeholder="Manifest your big dreams..."></textarea>
+        </div>
+
+        <div class="calendar-grid" id="grid"></div>
+    </div>
+
+    <div id="pdf-report">
+        <h1 style="color:#ff4d94">Monthly Financial Statement 🎀</h1>
+        <div id="pdf-vision-copy" style="font-style: italic; margin-bottom: 20px;"></div>
+        <hr>
+        <div id="pdf-body"></div>
+    </div>
+
+    <div id="hub-page">
+        <div style="background:var(--terminal-grey); padding:10px; font-family:monospace; border-bottom:1px solid #ccc;">
+            ⚙️ SYSTEM_INPUT // NODE_<span id="node-id">0</span>
+        </div>
+        <div style="padding:20px; max-width:500px; margin:auto;">
+            <div class="card">
+                <h3 style="color:var(--hot-pink); margin:0 0 10px 0;">📊 Financial Ledger</h3>
+                <label style="font-size:10px;">INCOME (+)</label>
+                <input type="number" id="inc" placeholder="0.00" oninput="calcDailyNet()" style="margin-bottom:10px;">
+                <label style="font-size:10px;">EXPENSES (-)</label>
+                <input type="number" id="exp" placeholder="0.00" oninput="calcDailyNet()">
+                <div style="margin-top:15px; font-weight:bold;">Day Net: <span id="net-display">$0.00</span></div>
+            </div>
+            <div class="card">
+                <h3 style="color:var(--hot-pink); margin:0 0 10px 0;">📝 Tasks & Notes</h3>
+                <textarea id="todo" rows="4"></textarea>
+            </div>
+            <button class="back-btn" onclick="showFront()">SAVE & RETURN</button>
+        </div>
+    </div>
+
+<script>
+    const grid = document.getElementById('grid');
+    const bunny = document.getElementById('bunny');
+    const front = document.getElementById('front-page');
+    const hub = document.getElementById('hub-page');
+    const photoUpload = document.getElementById('photo-upload');
+    const photoGallery = document.getElementById('photo-gallery');
+    const visionInput = document.getElementById('vision-input');
+    const goalInput = document.getElementById('savings-goal');
+
+    let activeDay = 1;
+
+    // Build Grid
+    for (let i = 1; i <= 24; i++) {
+        const door = document.createElement('div');
+        door.className = 'door'; door.id = `node-${i}`; door.innerText = i;
+        door.onclick = () => openHub(i);
+        grid.appendChild(door);
+    }
+
+    // Bunny Logic
+    function moveBunny() {
+        const randomId = Math.floor(Math.random() * 24) + 1;
+        const target = document.getElementById(`node-${randomId}`);
+        const rect = target.getBoundingClientRect();
+        bunny.style.left = `${rect.left + (rect.width/2) - 15}px`;
+        bunny.style.top = `${rect.top + (rect.height/2) - 45}px`;
+        setTimeout(moveBunny, 3000);
+    }
+
+    // Storage & Render
+    window.onload = () => { 
+        moveBunny(); 
+        goalInput.value = localStorage.getItem('boutique_target_goal') || 1000;
+        updateCalculatedSummary(); 
+        renderPhotos();
+        visionInput.value = localStorage.getItem('boutique_vision') || '';
+    };
+
+    function renderPhotos() {
+        const photos = JSON.parse(localStorage.getItem('boutique_photos') || '[]');
+        photoGallery.innerHTML = photos.map(src => `<img src="${src}" class="vision-img">`).join('');
+    }
+
+    function deletePhotos() {
+        if(confirm("Clear your Vision Gallery? 🎀")) {
+            localStorage.removeItem('boutique_photos');
+            renderPhotos();
+        }
+    }
+
+    // Navigation
+    function openHub(day) {
+        activeDay = day; document.getElementById('node-id').innerText = day;
+        front.style.display = 'none'; hub.style.display = 'block'; bunny.style.display = 'none';
+        loadDayData(day);
+    }
+
+    function showFront() {
+        saveDayData(); 
+        hub.style.display = 'none'; front.style.display = 'flex';
+        bunny.style.display = 'block'; 
+        updateCalculatedSummary();
+    }
+
+    // Financial Engine
+    function calcDailyNet() {
+        const inc = parseFloat(document.getElementById('inc').value) || 0;
+        const exp = parseFloat(document.getElementById('exp').value) || 0;
+        const net = inc - exp;
+        const disp = document.getElementById('net-display');
+        disp.innerText = `$${net.toFixed(2)}`;
+        disp.style.color = net >= 0 ? '#2ecc71' : '#e74c3c';
+    }
+
+    function saveDayData() {
+        const data = { 
+            todo: document.getElementById('todo').value, 
+            inc: document.getElementById('inc').value, 
+            exp: document.getElementById('exp').value 
+        };
+        localStorage.setItem(`boutique_day_${activeDay}`, JSON.stringify(data));
+    }
+
+    function loadDayData(day) {
+        const data = JSON.parse(localStorage.getItem(`boutique_day_${day}`) || '{}');
+        document.getElementById('todo').value = data.todo || '';
+        document.getElementById('inc').value = data.inc || '';
+        document.getElementById('exp').value = data.exp || '';
+        calcDailyNet();
+    }
+
+    // THE CORE UPDATE: Live Calculation from Storage
+    function updateCalculatedSummary() {
+        let grandTotal = 0;
+        let goal = parseFloat(goalInput.value) || 1;
+        localStorage.setItem('boutique_target_goal', goal);
+
+        // Scan all days and calculate sum
+        for(let i=1; i<=24; i++) {
+            const data = JSON.parse(localStorage.getItem(`boutique_day_${i}`) || '{}');
+            const inc = parseFloat(data.inc) || 0;
+            const exp = parseFloat(data.exp) || 0;
+            grandTotal += (inc - exp);
+        }
+        
+        // Update Labels
+        const totalLabel = document.getElementById('total-saved-label');
+        totalLabel.innerText = `$${grandTotal.toFixed(2)}`;
+        totalLabel.style.color = grandTotal >= 0 ? '#2ecc71' : '#e74c3c';
+
+        // Update Progress Bar
+        const percentage = (grandTotal / goal) * 100;
+        const safePercent = Math.max(0, Math.min(percentage, 100)); // Keep between 0-100
+        document.getElementById('progress-fill').style.width = safePercent + '%';
+        document.getElementById('percent-label').innerText = `${Math.floor(percentage)}% of goal reached`;
+    }
+
+    // Vision Board Text
+    visionInput.addEventListener('input', () => {
+        localStorage.setItem('boutique_vision', visionInput.value);
+    });
+
+    // Image Upload
+    photoUpload.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const photos = JSON.parse(localStorage.getItem('boutique_photos') || '[]');
+                photos.push(e.target.result);
+                if(photos.length > 3) photos.shift();
+                localStorage.setItem('boutique_photos', JSON.stringify(photos));
+                renderPhotos();
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // PDF Export
+    function generatePDF() {
+        const pdfBody = document.getElementById('pdf-body');
+        document.getElementById('pdf-vision-copy').innerText = "Vision: " + visionInput.value;
+        pdfBody.innerHTML = '';
+        let total = 0;
+        for(let i=1; i<=24; i++) {
+            const data = JSON.parse(localStorage.getItem(`boutique_day_${i}`) || '{}');
+            if(data.inc || data.exp || data.todo) {
+                const net = (parseFloat(data.inc)||0)-(parseFloat(data.exp)||0);
+                total += net;
+                pdfBody.innerHTML += `<div style="margin-bottom:10px; border-bottom:1px solid #eee;"><h3>Node ${i}</h3><p>Income: $${data.inc||0} | Expenses: $${data.exp||0} | Net: $${net.toFixed(2)}</p><p>Note: ${data.todo||'N/A'}</p></div>`;
+            }
+        }
+        pdfBody.innerHTML += `<h2>Final Calculation: $${total.toFixed(2)}</h2>`;
+        const element = document.getElementById('pdf-report');
+        element.style.display = 'block';
+        html2pdf().from(element).save('My_Boutique_Financials.pdf').then(() => element.style.display = 'none');
+    }
+</script>
+</body>
+</html>
